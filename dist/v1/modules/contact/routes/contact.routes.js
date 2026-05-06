@@ -1,0 +1,14 @@
+"use strict";
+Object.defineProperty(exports, "__esModule", { value: true });
+exports.contactRoutes = void 0;
+const express_1 = require("express");
+const container_1 = require("../../../../container");
+const api_key_auth_1 = require("../../../../shared/middlewares/api-key-auth");
+const validate_request_1 = require("../../../../shared/middlewares/validate-request");
+const contact_controller_1 = require("../controllers/contact.controller");
+const create_contact_dto_1 = require("../dto/create-contact.dto");
+const contactRoutes = (0, express_1.Router)();
+exports.contactRoutes = contactRoutes;
+const contactController = container_1.container.resolve(contact_controller_1.ContactController);
+const apiKeyAuthMiddleware = container_1.container.resolve(api_key_auth_1.ApiKeyAuthMiddleware);
+contactRoutes.post('/', apiKeyAuthMiddleware.handle, (0, validate_request_1.validateRequest)(create_contact_dto_1.CreateContactDto), contactController.createContact);
