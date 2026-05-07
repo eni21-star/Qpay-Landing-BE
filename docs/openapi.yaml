@@ -1,0 +1,240 @@
+openapi: 3.0.3
+info:
+  title: Qpay Landing Backend API
+  version: 1.0.0
+  description: |
+    Frontend-facing contract for the Qpay landing backend.
+
+    Base URL:
+    `https://landingpageqpay.mythriftpayments.cc`
+
+    Authentication:
+    The current server expects the `x-api-key` header in bearer-style format:
+    `x-api-key: Bearer <SERVER_API_KEY>`
+servers:
+  - url: https://landingpageqpay.mythriftpayments.cc
+    description: Production
+tags:
+  - name: Health
+    description: Service status endpoints
+  - name: Contact
+    description: Submit landing-page contact questions
+paths:
+  /health:
+    get:
+      tags:
+        - Health
+      summary: Health check
+      description: Returns a simple success response when the API is running.
+      operationId: getHealth
+      responses:
+        '200':
+          description: API is healthy
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/HealthResponse'
+              examples:
+                success:
+                  value:
+                    success: true
+                    message: Server is healthy.
+  /api/v1/contact:
+    post:
+      tags:
+        - Contact
+      summary: Submit a user question
+      description: |
+        Accepts a user email address and question text, validates both values,
+        and stores the submission in MongoDB.
+      operationId: createContactSubmission
+      security:
+        - ApiKeyHeader: []
+      parameters:
+        - $ref: '#/components/parameters/XApiKey'
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/CreateContactRequest'
+            examples:
+              validRequest:
+                value:
+                  email: user@example.com
+                  question: I want to know more about Qpay pricing and onboarding.
+      responses:
+        '201':
+          description: Submission created
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/CreateContactSuccessResponse'
+              examples:
+                success:
+                  value:
+                    success: true
+                    message: Question submitted successfully.
+                    data:
+                      id: 681a24c6ef51f18b39c25cab
+                      email: user@example.com
+                      question: I want to know more about Qpay pricing and onboarding.
+                      createdAt: '2026-05-06T14:40:12.923Z'
+        '401':
+          description: Missing or invalid API key
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+              examples:
+                missingKey:
+                  value:
+                    success: false
+                    message: Missing API key.
+                invalidKey:
+                  value:
+                    success: false
+                    message: Invalid API key.
+        '422':
+          description: Validation failure
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+              examples:
+                invalidEmail:
+                  value:
+                    success: false
+                    message: email must be an email
+                invalidQuestion:
+                  value:
+                    success: false
+                    message: question must be longer than or equal to 10 characters
+        '429':
+          description: Too many requests
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/RateLimitResponse'
+              examples:
+                tooManyRequests:
+                  value:
+                    message: Too many requests, please try again later.
+        '500':
+          description: Server configuration or internal error
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+              examples:
+                serverKeyMissing:
+                  value:
+                    success: false
+                    message: Server API key is not configured.
+                internalError:
+                  value:
+                    success: false
+                    message: Internal server error.
+components:
+  securitySchemes:
+    ApiKeyHeader:
+      type: apiKey
+      in: header
+      name: x-api-key
+      description: |
+        Send the server API key in this exact format:
+        `Bearer <SERVER_API_KEY>`
+  parameters:
+    XApiKey:
+      name: x-api-key
+      in: header
+      required: true
+      schema:
+        type: string
+      description: |
+        Bearer-style API key header.
+        Example: `Bearer your-server-api-key`
+  schemas:
+    HealthResponse:
+      type: object
+      required:
+        - success
+        - message
+      properties:
+        success:
+          type: boolean
+          example: true
+        message:
+          type: string
+          example: Server is healthy.
+    CreateContactRequest:
+      type: object
+      additionalProperties: false
+      required:
+        - email
+        - question
+      properties:
+        email:
+          type: string
+          format: email
+          example: user@example.com
+          description: Valid user email address.
+        question:
+          type: string
+          minLength: 10
+          maxLength: 2000
+          example: I want to know more about Qpay pricing and onboarding.
+          description: User question or message.
+    CreateContactSuccessResponse:
+      type: object
+      required:
+        - success
+        - message
+        - data
+      properties:
+        success:
+          type: boolean
+          example: true
+        message:
+          type: string
+          example: Question submitted successfully.
+        data:
+          type: object
+          required:
+            - id
+            - email
+            - question
+            - createdAt
+          properties:
+            id:
+              type: string
+              example: 681a24c6ef51f18b39c25cab
+            email:
+              type: string
+              format: email
+              example: user@example.com
+            question:
+              type: string
+              example: I want to know more about Qpay pricing and onboarding.
+            createdAt:
+              type: string
+              format: date-time
+              example: '2026-05-06T14:40:12.923Z'
+    ErrorResponse:
+      type: object
+      required:
+        - success
+        - message
+      properties:
+        success:
+          type: boolean
+          example: false
+        message:
+          type: string
+          example: Invalid API key.
+    RateLimitResponse:
+      type: object
+      properties:
+        message:
+          type: string
+          example: Too many requests, please try again later.

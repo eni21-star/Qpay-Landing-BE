@@ -25,6 +25,12 @@ export const config = {
     headerName: 'x-api-key',
     apiKey: process.env.SERVER_API_KEY || '',
   },
+  email: {
+    resendApiKey: process.env.RESEND_API_KEY || '',
+    fromEmail: process.env.RESEND_FROM_EMAIL || '',
+    fromName: process.env.RESEND_FROM_NAME || 'Qpay NG',
+    replyToEmail: process.env.RESEND_REPLY_TO_EMAIL || process.env.RESEND_FROM_EMAIL || '',
+  },
   security: {
     corsOrigins: parseOrigins(process.env.CORS_ORIGINS),
     rateLimitWindowMs: Number(process.env.RATE_LIMIT_WINDOW_MS || 15 * 60 * 1000),
