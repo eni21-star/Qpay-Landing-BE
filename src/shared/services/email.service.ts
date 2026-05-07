@@ -1,3 +1,6 @@
+import fs from 'fs';
+import path from 'path';
+
 import { Resend } from 'resend';
 import { injectable } from 'tsyringe';
 
@@ -13,6 +16,7 @@ interface SendContactAcknowledgementInput {
 @injectable()
 export class EmailService {
   private readonly resendClient: Resend | null;
+  private readonly logoPath = path.resolve(process.cwd(), 'assets/qpay-logo-email.png');
 
   constructor() {
     this.resendClient = config.email.resendApiKey
@@ -44,6 +48,14 @@ export class EmailService {
       subject: template.subject,
       text: template.text,
       html: template.html,
+      attachments: [
+        {
+          filename: 'qpay-logo-email.png',
+          content: fs.readFileSync(this.logoPath),
+          contentType: 'image/png',
+          contentId: 'qpay-logo',
+        },
+      ],
     });
 
     if (response.error) {
